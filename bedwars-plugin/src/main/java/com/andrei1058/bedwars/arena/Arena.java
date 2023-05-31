@@ -21,6 +21,7 @@
 package com.andrei1058.bedwars.arena;
 
 import com.andrei1058.bedwars.BedWars;
+import com.andrei1058.bedwars.InventoryGUI;
 import com.andrei1058.bedwars.api.arena.GameState;
 import com.andrei1058.bedwars.api.arena.IArena;
 import com.andrei1058.bedwars.api.arena.NextEvent;
@@ -55,6 +56,7 @@ import com.andrei1058.bedwars.arena.tasks.GameStartingTask;
 import com.andrei1058.bedwars.arena.tasks.ReJoinTask;
 import com.andrei1058.bedwars.arena.team.BedWarsTeam;
 import com.andrei1058.bedwars.arena.team.TeamAssigner;
+import com.andrei1058.bedwars.arena.settings.ArenaSettings;
 import com.andrei1058.bedwars.configuration.ArenaConfig;
 import com.andrei1058.bedwars.configuration.Sounds;
 import com.andrei1058.bedwars.levels.internal.InternalLevel;
@@ -85,6 +87,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+import xyz.haoshoku.nick.api.NickAPI;
 
 import java.io.File;
 import java.time.Instant;
@@ -109,6 +112,7 @@ public class Arena implements IArena {
 
 
     private List<Player> players = new ArrayList<>();
+    private List<Player> playersWithControls = new ArrayList<>();
     private List<Player> spectators = new ArrayList<>();
     private List<Block> signs = new ArrayList<>();
     private GameState status = GameState.restarting;
@@ -178,6 +182,7 @@ public class Arena implements IArena {
     private int yKillHeight;
     private Instant startTime;
     private ITeamAssigner teamAssigner = new TeamAssigner();
+    private ArenaSettings settings = new ArenaSettings();
 
     /**
      * Load an arena.
@@ -554,6 +559,19 @@ public class Arena implements IArena {
                 SidebarService.getInstance().giveSidebar(p, this, false);
             }
             sendPreGameCommandItems(p);
+            if(players.size() == 1 || p.hasPermission(mainCmd + ".gamesettings")) {
+                if(p.hasPermission(mainCmd + ".gamesettings")) {
+                    playersWithControls.removeIf(player -> {
+                        if(!player.hasPermission(mainCmd + ".gamesettings")) {
+                            player.closeInventory();
+                            return true;
+                        }
+                        return false;
+                    });
+                }
+                playersWithControls.add(p);
+                p.getInventory().setItem(1, InventoryGUI.makeItem(Material.REDSTONE_BLOCK, "Arena Settings"));
+            }
             for (PotionEffect pf : p.getActivePotionEffects()) {
                 p.removePotionEffect(pf.getType());
             }
@@ -1309,6 +1327,10 @@ public class Arena implements IArena {
         return players;
     }
 
+    @Override
+    public List<Player> getPlayersWithControls() {
+        return playersWithControls;
+    }
     /**
      * Get the max number of players that can play on this arena.
      */
@@ -2215,6 +2237,13 @@ public class Arena implements IArena {
         return oreGenerators;
     }
 
+    public ArenaSettings getSettings() {
+        return settings;
+    }
+
+    public void setSettings(ArenaSettings settings) {
+        this.settings = settings;
+    }
     /**
      * Add a player to the most filled arena.
      * Check if is the party owner first.

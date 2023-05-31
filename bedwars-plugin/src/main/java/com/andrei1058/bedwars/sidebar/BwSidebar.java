@@ -236,7 +236,7 @@ public class BwSidebar implements ISidebar {
                 } else {
                     if (this.arena.getStatus() == GameState.starting) {
                         if (arena.getStartingTask() != null) {
-                            return String.valueOf(arena.getStartingTask().getCountdown() + 1);
+                            return String.valueOf(arena.getStartingTask().getCountdown() + 1) + (arena.getStartingTask().isPaused() ? " (paused)" : "");
                         }
                     }
                     return dateFormat.format(new Date(System.currentTimeMillis()));
@@ -386,7 +386,7 @@ public class BwSidebar implements ISidebar {
         }
 
         // unique tab list name
-        String tabListName = player.getName();
+        String tabListName = player.getDisplayName();
 
         if (tabList.containsKey(tabListName)) {
             handle.removeTab(tabListName);

@@ -21,12 +21,14 @@
 package com.andrei1058.bedwars.listeners;
 
 import com.andrei1058.bedwars.BedWars;
+import com.andrei1058.bedwars.api.arena.GameState;
 import com.andrei1058.bedwars.api.arena.IArena;
 import com.andrei1058.bedwars.api.arena.team.ITeam;
 import com.andrei1058.bedwars.api.configuration.ConfigPath;
 import com.andrei1058.bedwars.api.language.Messages;
 import com.andrei1058.bedwars.api.server.ServerType;
 import com.andrei1058.bedwars.arena.Arena;
+import com.andrei1058.bedwars.arena.settings.SettingsGUI;
 import com.andrei1058.bedwars.configuration.Sounds;
 import com.andrei1058.bedwars.shop.ShopCache;
 import com.andrei1058.bedwars.shop.listeners.InventoryListener;
@@ -52,6 +54,8 @@ import org.bukkit.material.Openable;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.util.Vector;
 
+import java.util.Set;
+
 import static com.andrei1058.bedwars.BedWars.*;
 import static com.andrei1058.bedwars.api.language.Language.getMsg;
 
@@ -74,6 +78,11 @@ public class Interact implements Listener {
         Player p = e.getPlayer();
         if (e.getAction() == Action.RIGHT_CLICK_BLOCK || e.getAction() == Action.RIGHT_CLICK_AIR) {
             ItemStack i = BedWars.nms.getItemInHand(p);
+            if(Arena.getArenaByPlayer(e.getPlayer()) != null && (Arena.getArenaByPlayer(e.getPlayer()).getStatus() == GameState.starting || Arena.getArenaByPlayer(e.getPlayer()).getStatus() == GameState.waiting)) {
+                if(e.getItem().getType() == Material.REDSTONE_BLOCK) {
+                    SettingsGUI.addInventoryForPlayer(p.getPlayer());
+                }
+            }
             if (!nms.isCustomBedWarsItem(i)) return;
             final String[] customData = nms.getCustomData(i).split("_");
             if (customData.length >= 2) {

@@ -39,8 +39,11 @@ import com.andrei1058.bedwars.support.papi.SupportPAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
+import xyz.haoshoku.nick.api.NickAPI;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 import static com.andrei1058.bedwars.BedWars.nms;
 import static com.andrei1058.bedwars.api.language.Language.getList;
@@ -51,6 +54,7 @@ public class GameStartingTask implements Runnable, StartingTask {
     private int countdown;
     private final IArena arena;
     private final BukkitTask task;
+    private boolean isPaused = false;
 
     public GameStartingTask(Arena arena) {
         this.arena = arena;
@@ -83,6 +87,9 @@ public class GameStartingTask implements Runnable, StartingTask {
     public int getTask() {
         return task.getTaskId();
     }
+    
+    public void setPaused(boolean paused) { isPaused = paused; }
+    public boolean isPaused() { return isPaused; }
 
     @Override
     public BukkitTask getBukkitTask() {
@@ -91,6 +98,7 @@ public class GameStartingTask implements Runnable, StartingTask {
 
     @Override
     public void run() {
+        if(isPaused) return;
         if (countdown == 0) {
             if (BedWars.config.getBoolean(ConfigPath.GENERAL_CONFIGURATION_EXPERIMENTAL_TEAM_ASSIGNER)) {
                 getArena().getTeamAssigner().assignTeams(getArena());
@@ -166,10 +174,30 @@ public class GameStartingTask implements Runnable, StartingTask {
 
     //Spawn players
     private void spawnPlayers() {
+//        List<String> nicks = new ArrayList<>();
+//        Random random = new Random();
         for (ITeam bwt : getArena().getTeams()) {
             for (Player p : new ArrayList<>(bwt.getMembers())) {
                 BedWarsTeam.reSpawnInvulnerability.put(p.getUniqueId(), System.currentTimeMillis() + 2000L);
                 bwt.firstSpawn(p);
+                if(((Arena) getArena()).getSettings().isPlayersNicked()) {
+                    System.out.println("Nicking player " + p.getName());
+                    NickAPI.nick(p, "NICKED");
+                    NickAPI.setSkin(p, "LifelikeBongo87");
+//                    while (true) {
+//                        String nick = random.ints(48, 123)
+//                                .filter(i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97))
+//                                .limit(10)
+//                                .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+//                                .toString();
+//                        if(nicks.contains(nick)) continue;
+//                        nicks.add(nick);
+//                        p.setDisplayName(nick);
+//                        System.out.println("Set nick to " + nick);
+//                        break;
+//                    }
+
+                }
                 Sounds.playSound(ConfigPath.SOUND_GAME_START, p);
                 nms.sendTitle(p, getMsg(p, Messages.ARENA_STATUS_START_PLAYER_TITLE), null, 0, 30, 10);
                 for (String tut : getList(p, Messages.ARENA_STATUS_START_PLAYER_TUTORIAL)) {

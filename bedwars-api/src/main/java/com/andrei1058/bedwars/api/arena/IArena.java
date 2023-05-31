@@ -123,6 +123,8 @@ public interface IArena {
      */
     List<Player> getPlayers();
 
+    List<Player> getPlayersWithControls();
+
     /**
      * Get maximum allowed players amount.
      */

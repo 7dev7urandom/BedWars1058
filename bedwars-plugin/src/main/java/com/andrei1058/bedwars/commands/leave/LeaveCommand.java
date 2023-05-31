@@ -30,6 +30,7 @@ public class LeaveCommand extends BukkitCommand {
 
     public LeaveCommand(String name) {
         super(name);
+        this.getAliases().add("l");
     }
 
     @Override

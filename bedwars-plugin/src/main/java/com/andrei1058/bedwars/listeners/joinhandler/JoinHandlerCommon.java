@@ -39,14 +39,14 @@ public class JoinHandlerCommon implements Listener {
     protected static void displayCustomerDetails(Player player) {
         if (player == null) return;
         //TODO IMPROVE, ADD MORE DETAILS
-        if (player.getName().equalsIgnoreCase("andrei1058") || player.getName().equalsIgnoreCase("andreea1058") || player.getName().equalsIgnoreCase("Dani3l_FTW")) {
-            player.sendMessage("§8[§f" + BedWars.plugin.getName() + " v" + BedWars.plugin.getDescription().getVersion() + "§8]§7§m---------------------------");
-            player.sendMessage("");
-            player.sendMessage("§7User ID: §f%%__USER__%%");
-            player.sendMessage("§7Download ID: §f%%__NONCE__%%");
-            player.sendMessage("");
-            player.sendMessage("§8[§f" + BedWars.plugin.getName() + "§8]§7§m---------------------------");
-        }
+//        if (player.getName().equalsIgnoreCase("andrei1058") || player.getName().equalsIgnoreCase("andreea1058") || player.getName().equalsIgnoreCase("Dani3l_FTW")) {
+//            player.sendMessage("§8[§f" + BedWars.plugin.getName() + " v" + BedWars.plugin.getDescription().getVersion() + "§8]§7§m---------------------------");
+//            player.sendMessage("");
+//            player.sendMessage("§7User ID: §f%%__USER__%%");
+//            player.sendMessage("§7Download ID: §f%%__NONCE__%%");
+//            player.sendMessage("");
+//            player.sendMessage("§8[§f" + BedWars.plugin.getName() + "§8]§7§m---------------------------");
+//        }
     }
 
     @EventHandler
