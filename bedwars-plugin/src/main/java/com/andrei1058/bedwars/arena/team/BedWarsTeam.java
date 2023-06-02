@@ -114,6 +114,10 @@ public class BedWarsTeam implements ITeam {
         if (drops != null) {
             setKillDropsLocation(drops);
         }
+
+        if(this.bed.getBlock().getType() == Material.AIR) {
+            this.bedDestroyed = true;
+        }
     }
 
     public int getSize() {
@@ -260,6 +264,11 @@ public class BedWarsTeam implements ITeam {
             }
         }
         sendArmor(p);
+        if(name == "Attacker") {
+            p.getInventory().addItem(new ItemStack(Material.IRON_INGOT, 64));
+        } else if (name == "Defender") {
+            p.getInventory().addItem(new ItemStack(Material.IRON_INGOT, 32));
+        }
     }
 
     public void defaultSword(Player p, boolean sword) {
@@ -745,7 +754,7 @@ public class BedWarsTeam implements ITeam {
             bh.hide();
             bh.show();
         }
-
+        arena.checkWinner();
     }
 
     @Deprecated

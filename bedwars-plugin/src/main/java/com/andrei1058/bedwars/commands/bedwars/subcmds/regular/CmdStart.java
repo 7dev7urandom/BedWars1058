@@ -61,7 +61,7 @@ public class CmdStart extends SubCommand {
             p.sendMessage(getMsg(p, Messages.COMMAND_FORCESTART_NOT_IN_GAME));
             return true;
         }
-        if (!(p.hasPermission(Permissions.PERMISSION_ALL) || p.hasPermission(Permissions.PERMISSION_FORCESTART))){
+        if (!(p.hasPermission(Permissions.PERMISSION_ALL) || p.hasPermission(Permissions.PERMISSION_FORCESTART) || a.getPlayersWithControls().contains(p))){
             p.sendMessage(getMsg(p, Messages.COMMAND_FORCESTART_NO_PERM));
             return true;
         }

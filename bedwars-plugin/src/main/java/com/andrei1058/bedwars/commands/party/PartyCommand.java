@@ -40,6 +40,7 @@ public class PartyCommand extends BukkitCommand {
 
     public PartyCommand(String name) {
         super(name);
+        this.getAliases().add("p");
     }
 
     //owner, target

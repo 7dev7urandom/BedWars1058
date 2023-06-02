@@ -36,4 +36,6 @@ public interface StartingTask {
     BukkitTask getBukkitTask();
 
     void cancel();
+    boolean isPaused();
+    void setPaused(boolean paused);
 }

@@ -344,6 +344,8 @@ public class BedWars extends JavaPlugin {
 
         registerEvents(new InvisibilityPotionListener());
 
+        registerEvents(new PlayerConfineToBaseListener());
+
         /* Load join signs. */
         loadArenasAndSigns();
 

@@ -32,6 +32,7 @@ import com.andrei1058.bedwars.api.language.Messages;
 import com.andrei1058.bedwars.api.tasks.PlayingTask;
 import com.andrei1058.bedwars.arena.Arena;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -47,13 +48,14 @@ public class GamePlayingTask implements Runnable, PlayingTask {
 
     private Arena arena;
     private BukkitTask task;
-    private int beds_destroy_countdown, dragon_spawn_countdown, game_end_countdown;
+    private int game_end_countdown, game_start_countdown;
 
     public GamePlayingTask(Arena arena) {
         this.arena = arena;
-        this.beds_destroy_countdown = BedWars.config.getInt(ConfigPath.GENERAL_CONFIGURATION_BEDS_DESTROY_COUNTDOWN);
-        this.dragon_spawn_countdown = BedWars.config.getInt(ConfigPath.GENERAL_CONFIGURATION_DRAGON_SPAWN_COUNTDOWN);
+//        this.beds_destroy_countdown = BedWars.config.getInt(ConfigPath.GENERAL_CONFIGURATION_BEDS_DESTROY_COUNTDOWN);
+//        this.dragon_spawn_countdown = BedWars.config.getInt(ConfigPath.GENERAL_CONFIGURATION_DRAGON_SPAWN_COUNTDOWN);
         this.game_end_countdown = BedWars.config.getInt(ConfigPath.GENERAL_CONFIGURATION_GAME_END_COUNTDOWN);
+        this.game_start_countdown = BedWars.config.getInt(ConfigPath.GENERAL_CONFIGURATION_GAME_START_COUNTDOWN);
         this.task = Bukkit.getScheduler().runTaskTimer(BedWars.plugin, this, 0, 20L);
     }
 
@@ -74,94 +76,43 @@ public class GamePlayingTask implements Runnable, PlayingTask {
     }
 
     public int getBedsDestroyCountdown() {
-        return beds_destroy_countdown;
+        return 0;
     }
 
     public int getDragonSpawnCountdown() {
-        return dragon_spawn_countdown;
+        return 0;
     }
 
     public int getGameEndCountdown() {
         return game_end_countdown;
     }
+    public int getGameStartCountdown() {
+        return game_start_countdown;
+    }
 
     @Override
     public void run() {
         switch (getArena().getNextEvent()) {
-            case EMERALD_GENERATOR_TIER_II:
-            case EMERALD_GENERATOR_TIER_III:
-            case DIAMOND_GENERATOR_TIER_II:
-            case DIAMOND_GENERATOR_TIER_III:
-                if (getArena().upgradeDiamondsCount > 0) {
-                    getArena().upgradeDiamondsCount--;
-                    if (getArena().upgradeDiamondsCount == 0) {
-                        getArena().updateNextEvent();
-                    }
-                }
-                if (getArena().upgradeEmeraldsCount > 0) {
-                    getArena().upgradeEmeraldsCount--;
-                    if (getArena().upgradeEmeraldsCount == 0) {
-                        getArena().updateNextEvent();
-                    }
-                }
-                break;
-            case BEDS_DESTROY:
-                beds_destroy_countdown--;
-                if (getBedsDestroyCountdown() == 0) {
+            case GAME_START:
+                game_start_countdown--;
+                if(game_start_countdown == 0) {
                     for (Player p : getArena().getPlayers()) {
-                        nms.sendTitle(p, getMsg(p, Messages.NEXT_EVENT_TITLE_ANNOUNCE_BEDS_DESTROYED), getMsg(p, Messages.NEXT_EVENT_SUBTITLE_ANNOUNCE_BEDS_DESTROYED), 0, 40, 10);
-                        p.sendMessage(getMsg(p, Messages.NEXT_EVENT_CHAT_ANNOUNCE_BEDS_DESTROYED));
+                        nms.sendTitle(p, ChatColor.getByChar('c') + "Game started!", null, 0, 40, 10);
+                        p.sendMessage(ChatColor.getByChar('c') + (ChatColor.getByChar('l') + "Game has begun!"));
+//                        p.getInventory().remove(Material.IRON_INGOT);
                     }
                     for (Player p : getArena().getSpectators()) {
-                        nms.sendTitle(p, getMsg(p, Messages.NEXT_EVENT_TITLE_ANNOUNCE_BEDS_DESTROYED), getMsg(p, Messages.NEXT_EVENT_SUBTITLE_ANNOUNCE_BEDS_DESTROYED), 0, 40, 10);
-                        p.sendMessage(getMsg(p, Messages.NEXT_EVENT_CHAT_ANNOUNCE_BEDS_DESTROYED));
-                    }
-                    for (ITeam t : getArena().getTeams()) {
-                        t.setBedDestroyed(true);
+                        nms.sendTitle(p, ChatColor.getByChar('c') + "Game started!", null, 0, 40, 10);
+                        p.sendMessage(ChatColor.getByChar('c') + (ChatColor.getByChar('l') + "Game has begun!"));
                     }
                     getArena().updateNextEvent();
-                }
-                break;
-            case ENDER_DRAGON:
-                dragon_spawn_countdown--;
-                if (getDragonSpawnCountdown() == 0) {
-                    for (Player p : getArena().getPlayers()) {
-                        nms.sendTitle(p, getMsg(p, Messages.NEXT_EVENT_TITLE_ANNOUNCE_SUDDEN_DEATH), getMsg(p, Messages.NEXT_EVENT_SUBTITLE_ANNOUNCE_SUDDEN_DEATH), 0, 40, 10);
-                        for (ITeam t : getArena().getTeams()) {
-                            if (t.getMembers().isEmpty()) continue;
-                            p.sendMessage(getMsg(p, Messages.NEXT_EVENT_CHAT_ANNOUNCE_SUDDEN_DEATH).replace("{TeamDragons}", String.valueOf(t.getDragons()))
-                                    .replace("{TeamColor}", t.getColor().chat().toString()).replace("{TeamName}", t.getDisplayName(Language.getPlayerLanguage(p))));
-                        }
-                    }
-                    for (Player p : getArena().getSpectators()) {
-                        nms.sendTitle(p, getMsg(p, Messages.NEXT_EVENT_TITLE_ANNOUNCE_SUDDEN_DEATH), getMsg(p, Messages.NEXT_EVENT_SUBTITLE_ANNOUNCE_SUDDEN_DEATH), 0, 40, 10);
-                        for (ITeam t : getArena().getTeams()) {
-                            if (t.getMembers().isEmpty()) continue;
-                            p.sendMessage(getMsg(p, Messages.NEXT_EVENT_CHAT_ANNOUNCE_SUDDEN_DEATH).replace("{TeamDragons}", String.valueOf(t.getDragons()))
-                                    .replace("{TeamColor}", t.getColor().chat().toString()).replace("{TeamName}", t.getDisplayName(Language.getPlayerLanguage(p))));
-                        }
-                    }
-                    getArena().updateNextEvent();
-                    for (ITeam team : arena.getTeams()){
-                        for (IGenerator o : team.getGenerators()) {
-                            Location l = o.getLocation();
-                            for (int y = 0; y < 20; y++) {
-                                l.clone().subtract(0, y, 0).getBlock().setType(Material.AIR);
-                            }
-                        }
-                    }
-                    for (ITeam t : getArena().getTeams()) {
-                        if (t.getMembers().isEmpty()) continue;
-                        for (int x = 0; x < t.getDragons(); x++) {
-                            nms.spawnDragon(getArena().getConfig().getArenaLoc("waiting.Loc").add(0, 10, 0), t);
-                        }
-                    }
                 }
                 break;
             case GAME_END:
                 game_end_countdown--;
                 if (getGameEndCountdown() == 0) {
-                    getArena().checkWinner();
+//                    getArena().checkWinner();
+                    getArena().gameOver(getArena().getTeam("Attacker"));
                     getArena().changeStatus(GameState.restarting);
                 }
                 break;

@@ -284,6 +284,9 @@ public class BreakPlace implements Listener {
             // allow breaking of grass
             // drops are removed in another event
             switch (e.getBlock().getType().toString()) {
+                case "ENDER_STONE":
+                case "WOOD":
+                case "STAINED_GLASS":
                 case "LONG_GRASS":
                 case "TALL_GRASS":
                 case "TALL_SEAGRASS":

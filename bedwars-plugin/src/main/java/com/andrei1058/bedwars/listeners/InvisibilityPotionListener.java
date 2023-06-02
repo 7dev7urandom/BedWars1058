@@ -24,6 +24,7 @@ import com.andrei1058.bedwars.api.arena.IArena;
 import com.andrei1058.bedwars.api.arena.team.ITeam;
 import com.andrei1058.bedwars.api.events.player.PlayerInvisibilityPotionEvent;
 import com.andrei1058.bedwars.arena.Arena;
+import com.andrei1058.bedwars.arena.tasks.InvisFootstepsTask;
 import com.andrei1058.bedwars.sidebar.SidebarService;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -86,12 +87,13 @@ public class InvisibilityPotionListener implements Listener {
                             for (Player p1 : e.getPlayer().getWorld().getPlayers()) {
                                 if (a.isSpectator(p1)) {
                                     // hide player armor to spectators
-                                    nms.hideArmor(e.getPlayer(), p1);
+//                                    nms.hideArmor(e.getPlayer(), p1);
                                 } else if (t != a.getTeam(p1)) {
                                     // hide player armor to other teams
                                     nms.hideArmor(e.getPlayer(), p1);
                                 }
                             }
+                            new InvisFootstepsTask(e.getPlayer());
                             // call custom event
                             Bukkit.getPluginManager().callEvent(new PlayerInvisibilityPotionEvent(PlayerInvisibilityPotionEvent.Type.ADDED, t, e.getPlayer(), t.getArena()));
                         }

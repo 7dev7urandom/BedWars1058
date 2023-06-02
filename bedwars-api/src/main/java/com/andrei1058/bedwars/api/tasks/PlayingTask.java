@@ -34,9 +34,7 @@ public interface PlayingTask {
      */
     int getTask();
 
-    int getBedsDestroyCountdown();
-
-    int getDragonSpawnCountdown();
+    int getGameStartCountdown();
 
     int getGameEndCountdown();
 

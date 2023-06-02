@@ -21,6 +21,7 @@
 package com.andrei1058.bedwars.arena;
 
 import com.andrei1058.bedwars.BedWars;
+import com.andrei1058.bedwars.InventoryGUI;
 import com.andrei1058.bedwars.api.arena.GameState;
 import com.andrei1058.bedwars.api.arena.IArena;
 import com.andrei1058.bedwars.api.arena.NextEvent;
@@ -55,6 +56,7 @@ import com.andrei1058.bedwars.arena.tasks.GameStartingTask;
 import com.andrei1058.bedwars.arena.tasks.ReJoinTask;
 import com.andrei1058.bedwars.arena.team.BedWarsTeam;
 import com.andrei1058.bedwars.arena.team.TeamAssigner;
+import com.andrei1058.bedwars.arena.settings.ArenaSettings;
 import com.andrei1058.bedwars.configuration.ArenaConfig;
 import com.andrei1058.bedwars.configuration.Sounds;
 import com.andrei1058.bedwars.levels.internal.InternalLevel;
@@ -73,6 +75,7 @@ import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
@@ -109,17 +112,20 @@ public class Arena implements IArena {
 
 
     private List<Player> players = new ArrayList<>();
+    private List<Player> playersWithControls = new ArrayList<>();
     private List<Player> spectators = new ArrayList<>();
     private List<Block> signs = new ArrayList<>();
     private GameState status = GameState.restarting;
     private YamlConfiguration yml;
     private ArenaConfig cm;
-    private int minPlayers = 2, maxPlayers = 10, maxInTeam = 1, islandRadius = 10;
+    private int minPlayers = 2, maxPlayers = 2, maxInTeam = 1, islandRadius = 10;
     public int upgradeDiamondsCount = 0, upgradeEmeraldsCount = 0;
     public boolean allowSpectate = true;
     private World world;
     private String group = "Default", arenaName, worldName;
-    private List<ITeam> teams = new ArrayList<>();
+//    private List<ITeam> teams = new ArrayList<>();
+    private ITeam defendingTeam;
+    private ITeam attackingTeam;
     private LinkedList<org.bukkit.util.Vector> placed = new LinkedList<>();
     private List<String> nextEvents = new ArrayList<>();
     private List<Region> regionsList = new ArrayList<>();
@@ -130,7 +136,7 @@ public class Arena implements IArena {
     /**
      * Current event, used at scoreboard
      */
-    private NextEvent nextEvent = NextEvent.DIAMOND_GENERATOR_TIER_II;
+    private NextEvent nextEvent = NextEvent.GAME_START;
     private int diamondTier = 1, emeraldTier = 1;
 
     /**
@@ -178,6 +184,7 @@ public class Arena implements IArena {
     private int yKillHeight;
     private Instant startTime;
     private ITeamAssigner teamAssigner = new TeamAssigner();
+    private ArenaSettings settings = new ArenaSettings();
 
     /**
      * Load an arena.
@@ -315,31 +322,33 @@ public class Arena implements IArena {
         }
 
         //Create teams
-        for (String team : yml.getConfigurationSection("Team").getKeys(false)) {
-            if (getTeam(team) != null) {
-                BedWars.plugin.getLogger().severe("A team with name: " + team + " was already loaded for arena: " + getArenaName());
-                continue;
-            }
-            BedWarsTeam bwt = new BedWarsTeam(team, TeamColor.valueOf(yml.getString("Team." + team + ".Color").toUpperCase()), cm.getArenaLoc("Team." + team + ".Spawn"),
-                    cm.getArenaLoc("Team." + team + ".Bed"), cm.getArenaLoc("Team." + team + ".Shop"), cm.getArenaLoc("Team." + team + ".Upgrade"), this);
-            teams.add(bwt);
-            bwt.spawnGenerators();
-        }
+//        for (String team : yml.getConfigurationSection("Team").getKeys(false)) {
+//            if (getTeam(team) != null) {
+//                BedWars.plugin.getLogger().severe("A team with name: " + team + " was already loaded for arena: " + getArenaName());
+//                continue;
+//            }
+//            BedWarsTeam bwt = new BedWarsTeam(team, TeamColor.valueOf(yml.getString("Team." + team + ".Color").toUpperCase()), cm.getArenaLoc("Team." + team + ".Spawn"),
+//                    cm.getArenaLoc("Team." + team + ".Bed"), cm.getArenaLoc("Team." + team + ".Shop"), cm.getArenaLoc("Team." + team + ".Upgrade"), this);
+//            teams.add(bwt);
+//            bwt.spawnGenerators();
+//        }
+        attackingTeam = new BedWarsTeam("Attacker", TeamColor.RED, cm.getArenaLoc("Team.Attacker.Spawn"), new Location(world, 0, 0, 0), cm.getArenaLoc("Team.Attacker.Shop"), new Location(world, 0, 0, 0), this);
+        defendingTeam = new BedWarsTeam("Defender", TeamColor.GREEN, cm.getArenaLoc("Team.Defender.Spawn"), cm.getArenaLoc("Team.Defender.Bed"), cm.getArenaLoc("Team.Defender.Shop"), new Location(world, 0, 0, 0), this);
 
         //Load diamond/ emerald generators
-        Location location;
-        for (String type : Arrays.asList("Diamond", "Emerald")) {
-            if (yml.get("generator." + type) != null) {
-                for (String s : yml.getStringList("generator." + type)) {
-                    location = cm.convertStringToArenaLocation(s);
-                    if (location == null) {
-                        plugin.getLogger().severe("Invalid location for " + type + " generator: " + s);
-                        continue;
-                    }
-                    oreGenerators.add(new OreGenerator(location, this, GeneratorType.valueOf(type.toUpperCase()), null));
-                }
-            }
-        }
+//        Location location;
+//        for (String type : Arrays.asList("Diamond", "Emerald")) {
+//            if (yml.get("generator." + type) != null) {
+//                for (String s : yml.getStringList("generator." + type)) {
+//                    location = cm.convertStringToArenaLocation(s);
+//                    if (location == null) {
+//                        plugin.getLogger().severe("Invalid location for " + type + " generator: " + s);
+//                        continue;
+//                    }
+//                    oreGenerators.add(new OreGenerator(location, this, GeneratorType.valueOf(type.toUpperCase()), null));
+//                }
+//            }
+//        }
 
         arenas.add(this);
         arenaByName.put(getArenaName(), this);
@@ -394,10 +403,10 @@ public class Arena implements IArena {
             nextEvents.add(ne.toString());
         }
 
-        upgradeDiamondsCount = getGeneratorsCfg().getInt(getGeneratorsCfg().getYml().get(getGroup() + "." + ConfigPath.GENERATOR_DIAMOND_TIER_II_START) == null ?
-                "Default." + ConfigPath.GENERATOR_DIAMOND_TIER_II_START : getGroup() + "." + ConfigPath.GENERATOR_DIAMOND_TIER_II_START);
-        upgradeEmeraldsCount = getGeneratorsCfg().getInt(getGeneratorsCfg().getYml().get(getGroup() + "." + ConfigPath.GENERATOR_EMERALD_TIER_II_START) == null ?
-                "Default." + ConfigPath.GENERATOR_EMERALD_TIER_II_START : getGroup() + "." + ConfigPath.GENERATOR_EMERALD_TIER_II_START);
+//        upgradeDiamondsCount = getGeneratorsCfg().getInt(getGeneratorsCfg().getYml().get(getGroup() + "." + ConfigPath.GENERATOR_DIAMOND_TIER_II_START) == null ?
+//                "Default." + ConfigPath.GENERATOR_DIAMOND_TIER_II_START : getGroup() + "." + ConfigPath.GENERATOR_DIAMOND_TIER_II_START);
+//        upgradeEmeraldsCount = getGeneratorsCfg().getInt(getGeneratorsCfg().getYml().get(getGroup() + "." + ConfigPath.GENERATOR_EMERALD_TIER_II_START) == null ?
+//                "Default." + ConfigPath.GENERATOR_EMERALD_TIER_II_START : getGroup() + "." + ConfigPath.GENERATOR_EMERALD_TIER_II_START);
         plugin.getLogger().info("Load done: " + getArenaName());
 
 
@@ -437,7 +446,7 @@ public class Arena implements IArena {
                     return arena.isSpectator(member);
                 }).count();
 
-                if (partySize > maxInTeam * getTeams().size() - getPlayers().size()) {
+                if (partySize > maxInTeam * 2 - getPlayers().size()) {
                     p.sendMessage(getMsg(p, Messages.COMMAND_JOIN_DENIED_PARTY_TOO_BIG));
                     return false;
                 }
@@ -554,6 +563,20 @@ public class Arena implements IArena {
                 SidebarService.getInstance().giveSidebar(p, this, false);
             }
             sendPreGameCommandItems(p);
+            if(players.size() == 1 || p.hasPermission(mainCmd + ".gamesettings")) {
+                if(p.hasPermission(mainCmd + ".gamesettings")) {
+                    playersWithControls.removeIf(player -> {
+                        if(!player.hasPermission(mainCmd + ".gamesettings")) {
+                            player.closeInventory();
+                            player.getInventory().remove(Material.REDSTONE_BLOCK);
+                            return true;
+                        }
+                        return false;
+                    });
+                }
+                playersWithControls.add(p);
+                p.getInventory().setItem(1, InventoryGUI.makeItem(Material.REDSTONE_BLOCK, "Arena Settings"));
+            }
             for (PotionEffect pf : p.getActivePotionEffects()) {
                 p.removePotionEffect(pf.getType());
             }
@@ -1301,6 +1324,14 @@ public class Arena implements IArena {
         return language.m(Messages.ARENA_DISPLAY_GROUP_PATH + getGroup().toLowerCase());
     }
 
+    @Override
+    public List<ITeam> getTeams() {
+        List<ITeam> list = new ArrayList<>();
+        list.add(attackingTeam);
+        list.add(defendingTeam);
+        return list;
+    }
+
     /**
      * Get the players list
      */
@@ -1309,6 +1340,10 @@ public class Arena implements IArena {
         return players;
     }
 
+    @Override
+    public List<Player> getPlayersWithControls() {
+        return playersWithControls;
+    }
     /**
      * Get the max number of players that can play on this arena.
      */
@@ -1342,11 +1377,6 @@ public class Arena implements IArena {
     @Override
     public String getArenaName() {
         return arenaName;
-    }
-
-    @Override
-    public List<ITeam> getTeams() {
-        return teams;
     }
 
     @Override
@@ -1828,126 +1858,59 @@ public class Arena implements IArena {
         return null;
     }
 
+    public void gameOver(ITeam winner) {
+        for (Player p : world.getPlayers()) {
+            p.sendMessage(getMsg(p, Messages.GAME_END_TEAM_WON_CHAT).replace("{TeamColor}", winner.getColor().chat().toString())
+                    .replace("{TeamName}", winner.getDisplayName(Language.getPlayerLanguage(p))));
+            if (!winner.getMembers().contains(p)) {
+                nms.sendTitle(p, getMsg(p, Messages.GAME_END_GAME_OVER_PLAYER_TITLE), null, 0, 70, 20);
+            } else {
+                nms.sendTitle(p, getMsg(p, Messages.GAME_END_VICTORY_PLAYER_TITLE), null, 0, 70, 20);
+            }
+        }
+        changeStatus(GameState.restarting);
+
+        //Game end event
+        List<UUID> winners = new ArrayList<>(), losers = new ArrayList<>(), aliveWinners = new ArrayList<>();
+        for (Player p : getPlayers()) {
+            aliveWinners.add(p.getUniqueId());
+        }
+        if (winner != null) {
+            //noinspection deprecation
+            for (Player p : winner.getMembersCache()) {
+                winners.add(p.getUniqueId());
+            }
+        }
+        for (ITeam bwt : getTeams()) {
+            if (winner != null) {
+                if (bwt == winner) continue;
+            }
+            //noinspection deprecation
+            for (Player p : bwt.getMembersCache()) {
+                losers.add(p.getUniqueId());
+            }
+        }
+        Bukkit.getPluginManager().callEvent(new GameEndEvent(this, winners, losers, winner, aliveWinners));
+
+    }
+
     /**
      * Check winner. You can always do that.
      * It will manage the arena restart and the needed stuff.
      */
     public void checkWinner() {
+        ITeam winner = null;
         if (getStatus() != GameState.restarting) {
-            int max = getTeams().size(), eliminated = 0;
-            ITeam winner = null;
-            for (ITeam t : getTeams()) {
-                if (t.getMembers().isEmpty()) {
-                    eliminated++;
-                } else {
-                    winner = t;
+            if (getStatus() == GameState.playing) {
+                if(attackingTeam.getMembers().isEmpty()) {
+                    winner = defendingTeam;
+                }
+                if(defendingTeam.isBedDestroyed()) {
+                    winner = attackingTeam;
                 }
             }
-            if (max - eliminated == 1) {
-                if (winner != null) {
-                    if (!winner.getMembers().isEmpty()) {
-                        for (Player p : winner.getMembers()) {
-                            if (!p.isOnline()) continue;
-                            p.getInventory().clear();
-                        }
-                    }
-                    String firstName = "";
-                    String secondName = "";
-                    String thirdName = "";
-                    StringBuilder winners = new StringBuilder();
-                    //noinspection deprecation
-                    for (Player p : winner.getMembersCache()) {
-                        if (p.getWorld().equals(getWorld())) {
-                            nms.sendTitle(p, getMsg(p, Messages.GAME_END_VICTORY_PLAYER_TITLE), null, 0, 70, 20);
-                        }
-                        if (!winners.toString().contains(p.getDisplayName())) {
-                            winners.append(p.getDisplayName()).append(" ");
-                        }
-                    }
-                    if (winners.toString().endsWith(" ")) {
-                        winners = new StringBuilder(winners.substring(0, winners.length() - 1));
-                    }
-                    int first = 0, second = 0, third = 0;
-                    if (!playerKills.isEmpty()) {
-
-
-                        LinkedHashMap<String, Integer> reverseSortedMap = new LinkedHashMap<>();
-
-                        //Use Comparator.reverseOrder() for reverse ordering
-                        playerKills.entrySet()
-                                .stream()
-                                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-                                .forEachOrdered(x -> reverseSortedMap.put(x.getKey(), x.getValue()));
-
-                        int entry = 0;
-                        for (Map.Entry<String, Integer> e : reverseSortedMap.entrySet()) {
-                            if (entry == 0) {
-                                firstName = e.getKey();
-                                Player onlinePlayer = Bukkit.getPlayerExact(e.getKey());
-                                if (onlinePlayer != null) {
-                                    firstName = onlinePlayer.getDisplayName();
-                                }
-                                first = e.getValue();
-                            } else if (entry == 1) {
-                                secondName = e.getKey();
-                                Player onlinePlayer = Bukkit.getPlayerExact(e.getKey());
-                                if (onlinePlayer != null) {
-                                    secondName = onlinePlayer.getDisplayName();
-                                }
-                                second = e.getValue();
-                            } else if (entry == 2) {
-                                thirdName = e.getKey();
-                                Player onlinePlayer = Bukkit.getPlayerExact(e.getKey());
-                                if (onlinePlayer != null) {
-                                    thirdName = onlinePlayer.getDisplayName();
-                                }
-                                third = e.getValue();
-                                break;
-                            }
-                            entry++;
-                        }
-                    }
-                    for (Player p : world.getPlayers()) {
-                        p.sendMessage(getMsg(p, Messages.GAME_END_TEAM_WON_CHAT).replace("{TeamColor}", winner.getColor().chat().toString())
-                                .replace("{TeamName}", winner.getDisplayName(Language.getPlayerLanguage(p))));
-                        if (!winner.getMembers().contains(p)) {
-                            nms.sendTitle(p, getMsg(p, Messages.GAME_END_GAME_OVER_PLAYER_TITLE), null, 0, 70, 20);
-                        }
-                        for (String s : getList(p, Messages.GAME_END_TOP_PLAYER_CHAT)) {
-                            String message = s.replace("{firstName}", firstName.isEmpty() ? getMsg(p, Messages.MEANING_NOBODY) : firstName).replace("{firstKills}", String.valueOf(first))
-                                    .replace("{secondName}", secondName.isEmpty() ? getMsg(p, Messages.MEANING_NOBODY) : secondName).replace("{secondKills}", String.valueOf(second))
-                                    .replace("{thirdName}", thirdName.isEmpty() ? getMsg(p, Messages.MEANING_NOBODY) : thirdName).replace("{thirdKills}", String.valueOf(third))
-                                    .replace("{winnerFormat}", getMaxInTeam() > 1 ? getMsg(p, Messages.FORMATTING_TEAM_WINNER_FORMAT).replace("{members}", winners.toString()) : getMsg(p, Messages.FORMATTING_SOLO_WINNER_FORMAT).replace("{members}", winners.toString()))
-                                    .replace("{TeamColor}", winner.getColor().chat().toString()).replace("{TeamName}", winner.getDisplayName(Language.getPlayerLanguage(p)));
-                            p.sendMessage(SupportPAPI.getSupportPAPI().replace(p, message));
-                        }
-                    }
-                }
-                changeStatus(GameState.restarting);
-
-                //Game end event
-                List<UUID> winners = new ArrayList<>(), losers = new ArrayList<>(), aliveWinners = new ArrayList<>();
-                for (Player p : getPlayers()) {
-                    aliveWinners.add(p.getUniqueId());
-                }
-                if (winner != null) {
-                    //noinspection deprecation
-                    for (Player p : winner.getMembersCache()) {
-                        winners.add(p.getUniqueId());
-                    }
-                }
-                for (ITeam bwt : getTeams()) {
-                    if (winner != null) {
-                        if (bwt == winner) continue;
-                    }
-                    //noinspection deprecation
-                    for (Player p : bwt.getMembersCache()) {
-                        losers.add(p.getUniqueId());
-                    }
-                }
-                Bukkit.getPluginManager().callEvent(new GameEndEvent(this, winners, losers, winner, aliveWinners));
-                //
-
+            if (winner != null) {
+                gameOver(winner);
             }
             if (players.size() == 0 && getStatus() != GameState.restarting) {
                 changeStatus(GameState.restarting);
@@ -1984,77 +1947,10 @@ public class Arena implements IArena {
 
         debug("---");
         debug("updateNextEvent called");
-        if (nextEvent == NextEvent.EMERALD_GENERATOR_TIER_II && upgradeEmeraldsCount == 0) {
-            // next diamond time < next emerald time
-            int next = getGeneratorsCfg().getInt(getGeneratorsCfg().getYml().get(getGroup() + "." + ConfigPath.GENERATOR_EMERALD_TIER_III_START) == null ?
-                    "Default." + ConfigPath.GENERATOR_EMERALD_TIER_III_START : getGroup() + "." + ConfigPath.GENERATOR_EMERALD_TIER_III_START);
-            if (upgradeDiamondsCount < next && diamondTier == 1) {
-                setNextEvent(NextEvent.DIAMOND_GENERATOR_TIER_II);
-            } else if (upgradeDiamondsCount < next && diamondTier == 2) {
-                setNextEvent(NextEvent.DIAMOND_GENERATOR_TIER_III);
-            } else {
-                setNextEvent(NextEvent.EMERALD_GENERATOR_TIER_III);
-            }
-            upgradeEmeraldsCount = next;
-            emeraldTier = 2;
-            sendEmeraldsUpgradeMessages();
-            for (IGenerator o : getOreGenerators()) {
-                if (o.getType() == GeneratorType.EMERALD && o.getBwt() == null) {
-                    o.upgrade();
-                }
-            }
-        } else if (nextEvent == NextEvent.DIAMOND_GENERATOR_TIER_II && upgradeDiamondsCount == 0) {
-            int next = getGeneratorsCfg().getInt(getGeneratorsCfg().getYml().get(getGroup() + "." + ConfigPath.GENERATOR_DIAMOND_TIER_III_START) == null ?
-                    "Default." + ConfigPath.GENERATOR_DIAMOND_TIER_III_START : getGroup() + "." + ConfigPath.GENERATOR_DIAMOND_TIER_III_START);
-            if (upgradeEmeraldsCount < next && emeraldTier == 1) {
-                setNextEvent(NextEvent.EMERALD_GENERATOR_TIER_II);
-            } else if (upgradeEmeraldsCount < next && emeraldTier == 2) {
-                setNextEvent(NextEvent.EMERALD_GENERATOR_TIER_III);
-            } else {
-                setNextEvent(NextEvent.DIAMOND_GENERATOR_TIER_III);
-            }
-            upgradeDiamondsCount = next;
-            diamondTier = 2;
-            sendDiamondsUpgradeMessages();
-            for (IGenerator o : getOreGenerators()) {
-                if (o.getType() == GeneratorType.DIAMOND && o.getBwt() == null) {
-                    o.upgrade();
-                }
-            }
-        } else if (nextEvent == NextEvent.EMERALD_GENERATOR_TIER_III && upgradeEmeraldsCount == 0) {
-            emeraldTier = 3;
-            sendEmeraldsUpgradeMessages();
-            if (diamondTier == 1 && upgradeDiamondsCount > 0) {
-                setNextEvent(NextEvent.DIAMOND_GENERATOR_TIER_II);
-            } else if (diamondTier == 2 && upgradeDiamondsCount > 0) {
-                setNextEvent(NextEvent.DIAMOND_GENERATOR_TIER_III);
-            } else {
-                setNextEvent(NextEvent.BEDS_DESTROY);
-            }
-            for (IGenerator o : getOreGenerators()) {
-                if (o.getType() == GeneratorType.EMERALD && o.getBwt() == null) {
-                    o.upgrade();
-                }
-            }
-        } else if (nextEvent == NextEvent.DIAMOND_GENERATOR_TIER_III && upgradeDiamondsCount == 0) {
-            diamondTier = 3;
-            sendDiamondsUpgradeMessages();
-            if (emeraldTier == 1 && upgradeEmeraldsCount > 0) {
-                setNextEvent(NextEvent.EMERALD_GENERATOR_TIER_II);
-            } else if (emeraldTier == 2 && upgradeEmeraldsCount > 0) {
-                setNextEvent(NextEvent.EMERALD_GENERATOR_TIER_III);
-            } else {
-                setNextEvent(NextEvent.BEDS_DESTROY);
-            }
-            for (IGenerator o : getOreGenerators()) {
-                if (o.getType() == GeneratorType.DIAMOND && o.getBwt() == null) {
-                    o.upgrade();
-                }
-            }
-        } else if (nextEvent == NextEvent.BEDS_DESTROY && getPlayingTask().getBedsDestroyCountdown() == 0) {
-            setNextEvent(NextEvent.ENDER_DRAGON);
-        } else if (nextEvent == NextEvent.ENDER_DRAGON && getPlayingTask().getDragonSpawnCountdown() == 0) {
+        if (nextEvent == NextEvent.GAME_START) {
             setNextEvent(NextEvent.GAME_END);
+        } else if (nextEvent == NextEvent.GAME_END) {
+            // nothing
         }
 
         //if (nextEvent.getValue(this) > 0) return;
@@ -2215,6 +2111,13 @@ public class Arena implements IArena {
         return oreGenerators;
     }
 
+    public ArenaSettings getSettings() {
+        return settings;
+    }
+
+    public void setSettings(ArenaSettings settings) {
+        this.settings = settings;
+    }
     /**
      * Add a player to the most filled arena.
      * Check if is the party owner first.
@@ -2402,11 +2305,11 @@ public class Arena implements IArena {
             og.destroyData();
         }
         isOnABase.entrySet().removeIf(entry -> entry.getValue().getArena().equals(this));
-        for (ITeam bwt : teams) {
-            bwt.destroyData();
-        }
+        attackingTeam.destroyData();
+        defendingTeam.destroyData();
         playerLocation.entrySet().removeIf(e -> Objects.requireNonNull(e.getValue().getWorld()).getName().equalsIgnoreCase(worldName));
-        teams = null;
+        attackingTeam = null;
+        defendingTeam = null;
         placed = null;
         nextEvents = null;
         regionsList = null;

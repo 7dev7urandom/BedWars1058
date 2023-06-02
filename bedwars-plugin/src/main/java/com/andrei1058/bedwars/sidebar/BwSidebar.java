@@ -236,7 +236,7 @@ public class BwSidebar implements ISidebar {
                 } else {
                     if (this.arena.getStatus() == GameState.starting) {
                         if (arena.getStartingTask() != null) {
-                            return String.valueOf(arena.getStartingTask().getCountdown() + 1);
+                            return String.valueOf(arena.getStartingTask().getCountdown() + 1) + (arena.getStartingTask().isPaused() ? " (paused)" : "");
                         }
                     }
                     return dateFormat.format(new Date(System.currentTimeMillis()));
@@ -286,26 +286,11 @@ public class BwSidebar implements ISidebar {
         Arena arena = (Arena) this.arena;
         String st = "-";
         switch (arena.getNextEvent()) {
-            case EMERALD_GENERATOR_TIER_II:
-                st = getMsg(getPlayer(), Messages.NEXT_EVENT_EMERALD_UPGRADE_II);
-                break;
-            case EMERALD_GENERATOR_TIER_III:
-                st = getMsg(getPlayer(), Messages.NEXT_EVENT_EMERALD_UPGRADE_III);
-                break;
-            case DIAMOND_GENERATOR_TIER_II:
-                st = getMsg(getPlayer(), Messages.NEXT_EVENT_DIAMOND_UPGRADE_II);
-                break;
-            case DIAMOND_GENERATOR_TIER_III:
-                st = getMsg(getPlayer(), Messages.NEXT_EVENT_DIAMOND_UPGRADE_III);
+            case GAME_START:
+                st = "Game Start";
                 break;
             case GAME_END:
-                st = getMsg(getPlayer(), Messages.NEXT_EVENT_GAME_END);
-                break;
-            case BEDS_DESTROY:
-                st = getMsg(getPlayer(), Messages.NEXT_EVENT_BEDS_DESTROY);
-                break;
-            case ENDER_DRAGON:
-                st = getMsg(getPlayer(), Messages.NEXT_EVENT_DRAGON_SPAWN);
+                st = "Game End";
                 break;
         }
 
@@ -318,22 +303,11 @@ public class BwSidebar implements ISidebar {
         Arena arena = (Arena) this.arena;
         long time = 0L;
         switch (arena.getNextEvent()) {
-            case EMERALD_GENERATOR_TIER_II:
-            case EMERALD_GENERATOR_TIER_III:
-                time = (arena.upgradeEmeraldsCount) * 1000L;
-                break;
-            case DIAMOND_GENERATOR_TIER_II:
-            case DIAMOND_GENERATOR_TIER_III:
-                time = (arena.upgradeDiamondsCount) * 1000L;
+            case GAME_START:
+                time = (arena.getPlayingTask().getGameStartCountdown()) * 1000L;
                 break;
             case GAME_END:
                 time = (arena.getPlayingTask().getGameEndCountdown()) * 1000L;
-                break;
-            case BEDS_DESTROY:
-                time = (arena.getPlayingTask().getBedsDestroyCountdown()) * 1000L;
-                break;
-            case ENDER_DRAGON:
-                time = (arena.getPlayingTask().getDragonSpawnCountdown()) * 1000L;
                 break;
         }
         return time == 0 ? "0" : nextEventDateFormat.format(new Date(time));
@@ -386,7 +360,7 @@ public class BwSidebar implements ISidebar {
         }
 
         // unique tab list name
-        String tabListName = player.getName();
+        String tabListName = player.getDisplayName();
 
         if (tabList.containsKey(tabListName)) {
             handle.removeTab(tabListName);
